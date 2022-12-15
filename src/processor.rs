@@ -1,4 +1,5 @@
 use borsh::BorshSerialize;
+use crate::error::ReviewError;
 use crate::instruction::MovieInstruction;
 use crate::state::MovieAccountState;
 use solana_program::{
@@ -41,18 +42,43 @@ pub fn add_movie_review(
     msg!("Rating: {}", rating);
     msg!("Description: {}", description);
 
+    // Security: data validation
+    if rating > 5 || rating < 1 {
+        msg!("Rating cannot be higher than 5");
+        return Err(ReviewError::InvalidRating.into());
+    }
+
     let account_info_iter = &mut accounts.iter();
 
     let initializer = next_account_info(account_info_iter)?;
     let pda_account = next_account_info(account_info_iter)?;
     let system_program = next_account_info(account_info_iter)?;
 
+    // Security: check initializer
+    if !initializer.is_signer {
+        msg!("Missing required signature");
+        return Err(ProgramError::MissingRequiredSignature);
+    }
+
     let (pda, bump_seed) = Pubkey::find_program_address(
         &[initializer.key.as_ref(), title.as_bytes().as_ref()],
         program_id,
     );
 
-    let account_len = 1000;         // Static account size
+    // Security: check PDA
+    if pda != *pda_account.key {
+        msg!("Invalid seeds for PDA");
+        return Err(ProgramError::InvalidArgument);
+    }
+
+    let account_len = 1000;
+
+    // Security: check account size
+    let total_len: usize = 1 + 1 + (4 + title.len()) + (4 + description.len());
+    if total_len > account_len {
+        msg!("Data length is larger than {} bytes", account_len);
+        return Err(ReviewError::InvalidDataLength.into());
+    }
 
     let rent = Rent::get()?;
     let rent_lamports = rent.minimum_balance(account_len);
