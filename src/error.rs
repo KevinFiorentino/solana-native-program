@@ -5,7 +5,7 @@ use thiserror::Error;
 pub enum ReviewError {
     #[error("Account not initialized yet")]
     UninitializedAccount,
-    
+
     #[error("PDA derived does not equal PDA passed in")]
     InvalidPDA,
 
