@@ -39,7 +39,7 @@ async function sendTestMovieReview(signer: web3.Keypair, programId: web3.PublicK
     const movieTitle = `Back to the Future III`
     movieInstructionLayout.encode(
         {
-            variant: 0,
+            variant: 0,                                 // 0 = Add  ||  1 = Update   !!!!!
             title: movieTitle,
             rating: 5,
             description: 'A wonderful movie!!!'
